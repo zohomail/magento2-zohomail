@@ -1,0 +1,299 @@
+
+<?php
+	use Zoho\ZohoMail\Helper\ZConstants;
+	
+	$formKey = $this->getBlockHtml('formkey');
+	$zohomail_domain = $this->getDomain();
+?>
+<script type="text/javascript">
+	function addZeptoSuccessMessage(message) {
+        document.getElementById("zmail_messages").style.display = 'block';
+		document.getElementById("zmail_msg_class").className  ="message message-success success";
+		document.getElementById("zmail-msgText").innerHTML = message;
+		setTimeout(function() {document.getElementById("zohomail_messages").style.display = 'none' }, 5000);
+		window.scrollTo(0,0)
+    }
+	function addZeptoErrorMessage(message) {
+		document.getElementById("zmail_messages").style.display = 'block';
+		document.getElementById("zmail_msg_class").className  ="message message-error error";
+		document.getElementById("zmail-msgText").innerHTML = message;
+		setTimeout(function() {document.getElementById("zohomail_messages").style.display = 'none' }, 5000);
+		window.scrollTo(0,0)
+    }
+</script>
+
+<?php
+    $is_account_configured = $this->isAccountConfigured();
+    $is_mail_configured = $this->isEmailConfigured();
+    if($is_account_configured){
+        $emailDetail = $this->getZohoMailAccounts($this->getStoreId());
+        if(!empty($emailDetail["error"])) {
+            //$this->getMessageManager()->addError(__('Your Zoho Mail account is not configured correctly. Please reauthorize it to continue.'));
+            $is_account_configured = false;
+            $is_mail_configured = false;
+        }else {
+            $emailIdList = $emailDetail["sendmail_details"];
+            if(count($emailIdList) == 0) {
+                //$this->getMessageManager()->addError(__('Your email(s) are not associated with the current authorized account. Please update them or reauthorize with a valid Zoho Mail account.'));
+                $is_account_configured = false;
+                $is_mail_configured = false;
+            }
+        }
+    }
+
+?>
+
+
+
+
+
+<div class="zmail-settings">
+<div id="zmail_messages" style="display:none;"><div class="page messages"><div class="message message-error error" id="zmail_msg_class"><div id="zmail-msgText"></div></div></div></div>
+    <div class="zmail-main">
+		<div purpose="accordion-box" id="zmail_account_setup_ab" is_configured="<?= $block->escapeHtmlAttr($is_account_configured);?>" class="accordion-body   <?php if( !$is_account_configured){ ?> zmail-accordion-active<?php }else{?>zmail-accordion-inactive<?php } ?>">
+        <button purpose="configure-accordion" class="zmailaccordion__trigger <?php if(!$is_account_configured){?>zmailaccordion__trigger--expanded<?php }else{?> zmailaccordion__trigger--configured<?php } ?>">
+            <span class="zmailaccordion__title">
+            Account Configuration            </span>
+            <?php if($is_account_configured){?>
+			<span class="zmailsetup-status zmailsetup-status--completed">
+                <i class="zmaili-circle-check"></i>
+                Authorised
+            </span>
+			<?php } ?>
+			            <i class="zmaili-angle-down"></i>
+        </button>
+        <form name="f" class="zmailaccordion__content" id="zept-oauth-form" method="post" action="<?php echo $block->getUrl('zohomailauth/authsettings/index'); ?>"  data-mage-init='{"validation": {}}'>
+       	    <span class="zmailsetup-step-desc">
+               Configure your Zoho Mail account in this plugin to send emails from Magento. To generate client ID and client secret, click <a href="javascript:void(0)" purpose="zmail_generate_client">here</a>.                
+                
+            </span>
+            
+            <div class="zmailform-element">
+                <label class="zmailinput-label">Where is your account hosted?</label>
+                <div class="zmailtext zmailselect">
+                    <div class="zmailtext-field-wrapper">
+                        
+                        <div class="zmailtext__adorn " style="width:100%;">
+                       
+                        <select class="form--input form--input--select" name="zohomail_domain"  <?php if($is_account_configured){?>disabled<?php } ?>>
+                        <option value="zoho.com" <?php if($zohomail_domain == "zoho.com") {?> selected="true"<?php } ?>>mail.zoho.com</option>
+                        <option value="zoho.eu" <?php if($zohomail_domain == "zoho.eu") {?> selected="true"<?php } ?>>mail.zoho.eu</option>
+                        <option value="zoho.in" <?php if($zohomail_domain == "zoho.in") {?> selected="true"<?php } ?>>mail.zoho.in</option>
+                        <option value="zoho.com.cn" <?php if($zohomail_domain == "zoho.com.cn") {?> selected="true"<?php } ?>>mail.zoho.com.cn</option>
+                        <option value="zoho.com.au" <?php if($zohomail_domain == "zoho.com.au") {?> selected="true"<?php } ?>>mail.zoho.com.au</option>
+						<option value="zoho.jp" <?php if($zohomail_domain == "zoho.jp") {?> selected="true"<?php } ?>>mail.zoho.jp</option>
+						<option value="zohocloud.ca" <?php if($zohomail_domain == "zohocloud.ca") {?> selected="true"<?php } ?>>mail.zohocloud.ca</option>
+						<option value="zoho.sa" <?php if($zohomail_domain == "zoho.sa") {?> selected="true"<?php } ?>>mail.zoho.sa</option>
+                        </select></div>
+                    </div>
+                </div>
+            </div>
+            <div class="zmailform-element">
+                <label class="zmailinput-label">
+                    Client ID                </label>
+                <div class="zmailtext">
+                    <div class="zmailtext-field-wrapper">
+						<input class="zmailtext__box" type="text"value="<?= $block->escapeHtmlAttr($this->getClientId()) ?>" placeholder="Enter a valid client ID" id="zohomail_client_id" required="" <?php if($is_account_configured){?>disabled<?php } ?>>
+                    </div>
+                </div>
+            </div>
+            <div class="zmailform-element">
+                <label class="zmailinput-label">
+                    Client Secret                </label>
+                <div class="zmailtext">
+                    <div class="zmailtext-field-wrapper">
+						<input type="password" value="<?= $block->escapeHtmlAttr($this->getClientSecret()) ?>" class="zmailtext__box" id="zohomail_client_secret" placeholder="Enter a valid client secret"  required="" <?php if($is_account_configured){?>disabled<?php } ?>> 
+                    </div>
+                </div>
+            </div>
+            <div class="zmailform-element">
+                <label class="zmailinput-label">
+                   Authorization redirect URL                </label>
+                <div class="zmailtext">
+                    <div class="zmailtext-field-wrapper">
+						<input type="text" readonly="readonly" value="<?= $block->escapeHtml( $this->getCallBackUrlForStore()) ?>" class="zmailtext__box" id="zmail_redirection_url" required=""> 
+                    </div>
+                </div>
+				<i class="form__row-info">Copy this URL into Redirect URI field of your Client Id creation <a href="javascript:" class="tib-copy" purpose="copyredirecturi">Copy text</a> </i>
+				
+            </div>
+			
+            <div >
+						<br /><button class="zmailbtn <?php if($is_account_configured){?> zmail-dispNone <?php }?>" type="button" id="zohomail_authorize_btn" name="submit" class="button button-primary button-large"><?= $block->escapeHtml(__('Authorize')) ?> 
+							</button> &nbsp;
+							
+				</div>
+				
+            <span class="zmailsetup-step-desc  <?php if(!$is_account_configured){?> zmail-dispNone <?php }?> ">
+                To modify this data and re-authorize,                 
+                <input type="button" class="zmailbtn zmailbtn--flat zmailbtn--sm" purpose="reauthorize" value="click here.">
+            </span>
+				
+        </form>
+        </div>
+		<div purpose="accordion-box" id="zmail_send_mail_config_ab" is_configured="true" class="accordion-body <?php if( $is_account_configured){ ?> zmail-accordion-active<?php }else{?>zmail-accordion-inactive zmail-accordion-disabled<?php } ?>"">
+		<button purpose="configure-accordion" class="zmailaccordion__trigger <?php if( $is_account_configured){ ?> zmailaccordion__trigger--expanded <?php }else{?> zmailaccordion__trigger--collapsed<?php } ?>">
+            <span class="zmailaccordion__title">
+            Email Configuration            </span>
+			<span class="zmailsetup-status zmailsetup-status--completed zmail-dispNone">
+                <i class="zmaili-circle-check"></i>
+                Confgiured
+            </span>
+			<i class="zmaili-angle-down"></i>
+        </button>
+        <?php
+           if($is_account_configured)
+           {
+        
+        ?>
+        <form name="mailconfig" class="zmailaccordion__content" id="zmail-config-form" method="post" action="<?php echo $block->getUrl('zohomailauth/authsettings/index'); ?>"  data-mage-init='{"validation": {}}'>
+            <input type="hidden" name="options" value="saveEmailSettings"/>
+            <span class="zmailsetup-step-desc">
+            Configure your emails for each of the Magento categories.                
+                
+            </span>
+        
+        <div class="zmailform-element">
+                <label class="zmailinput-label"><?= $block->escapeHtml(__('General Contact')) ?></label>
+                <div class="zmailtext zmailselect">
+                    <div class="zmailtext-field-wrapper">
+                        
+                        <div class="zmailtext__adorn " style="width:100%;">
+                       
+                        <select class="form--input form--input--select" name="zmail_ident_general" data-validate='{required:true, "validate-email":true}'  <?php if($is_mail_configured){?>disabled<?php }?>>
+                            <option value="-1" >Select</option>
+                            <?php
+                            $emailVal = $this->getTransmailEmailAddress(ZConstants::ident_general,$this->getStoreId());
+							foreach ($emailIdList as $emailId){
+								?>
+								<option value="<?= $block->escapeHtmlAttr($emailId)?>" <?php if($emailVal == $emailId) {?> selected="true"<?php } ?>><?= $block->escapeHtml($emailId)?></option>
+								<?php
+							}
+                            ?>
+                        </select>
+                        </div>
+                    </div>
+                </div>
+        </div>
+        <div class="zmailform-element">
+            <label class="zmailinput-label"><?= $block->escapeHtml(__('Customer Support')) ?></label>
+            <div class="zmailtext zmailselect">
+                <div class="zmailtext-field-wrapper">
+                        
+                    <div class="zmailtext__adorn " style="width:100%;">
+                       
+                        <select class="form--input form--input--select" name="zmail_ident_support" data-validate='{required:true, "validate-email":true}' <?php if($is_mail_configured){?>disabled<?php }?>>
+                            <option value="-1" >Select</option>
+                            <?php
+                            $emailVal = $this->getTransmailEmailAddress(ZConstants::ident_support,$this->getStoreId());
+							foreach ($emailIdList as $emailId){
+								?>
+								<option value="<?= $block->escapeHtmlAttr($emailId)?>" <?php if($emailVal == $emailId) {?> selected="true"<?php } ?>><?= $block->escapeHtml($emailId)?></option>
+								<?php
+							}
+                            ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="zmailform-element">
+            <label class="zmailinput-label"><?= $block->escapeHtml(__('Sales Representative')) ?></label>
+            <div class="zmailtext zmailselect">
+                <div class="zmailtext-field-wrapper">
+                        
+                     <div class="zmailtext__adorn " style="width:100%;">
+                       
+                        <select class="form--input form--input--select" name="zmail_ident_sales" data-validate='{required:true, "validate-email":true}'  <?php if($is_mail_configured){?>disabled<?php }?>>
+                            <option value="-1" >Select</option>
+                            <?php
+                            $emailVal = $this->getTransmailEmailAddress(ZConstants::ident_sales,$this->getStoreId());
+							foreach ($emailIdList as $emailId){
+								?>
+								<option value="<?= $block->escapeHtmlAttr($emailId)?>" <?php if($emailVal == $emailId) {?> selected="true"<?php } ?>><?= $block->escapeHtml($emailId)?></option>
+								<?php
+							}
+                            ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="zmailform-element">
+            <label class="zmailinput-label"><?= $block->escapeHtml(__('Custom Email 1')) ?></label>
+            <div class="zmailtext zmailselect">
+                <div class="zmailtext-field-wrapper">
+                        
+                    <div class="zmailtext__adorn " style="width:100%;">
+                       
+                        <select class="form--input form--input--select" name="zmail_ident_custom1" data-validate='{required:true, "validate-email":true}'  <?php if($is_mail_configured){?>disabled<?php }?>>
+                            <option value="-1" >Select</option>
+                            <?php
+                            $emailVal = $this->getTransmailEmailAddress(ZConstants::ident_custom1,$this->getStoreId());
+							foreach ($emailIdList as $emailId){
+								?>
+								<option value="<?= $block->escapeHtmlAttr($emailId)?>" <?php if($emailVal == $emailId) {?> selected="true"<?php } ?>><?= $block->escapeHtml($emailId)?></option>
+								<?php
+							}
+                            ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="zmailform-element">
+            <label class="zmailinput-label"><?= $block->escapeHtml(__('Custom Email 2')) ?></label>
+            <div class="zmailtext zmailselect">
+                <div class="zmailtext-field-wrapper">
+                        
+                    <div class="zmailtext__adorn " style="width:100%;">
+                       
+                        <select class="form--input form--input--select" name="zmail_ident_custom2" data-validate='{required:true, "validate-email":true}'  <?php if($is_mail_configured){?>disabled<?php }?>>
+                            <option value="-1" >Select</option>
+                            <?php
+                            $emailVal = $this->getTransmailEmailAddress(ZConstants::ident_custom2,$this->getStoreId());
+							foreach ($emailIdList as $emailId){
+								?>
+								<option value="<?= $block->escapeHtmlAttr($emailId)?>" <?php if($emailVal == $emailId) {?> selected="true"<?php } ?>><?= $block->escapeHtml($emailId)?></option>
+								<?php
+							}
+                            ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div >
+						<br /><button class="zmailbtn  <?php if($is_mail_configured){?> zmail-dispNone <?php }?>" id="zohomail_mailconfig_btn" ><?= $block->escapeHtml(__('Save')) ?>
+                        </button> &nbsp;
+						<button class="zmailbtn  <?php if(!$is_mail_configured){?> zmail-dispNone <?php }?>" type="button" id="zohomail_test_btn" name="test" ><?= $block->escapeHtml(__('Test')) ?>  
+							</button>
+							
+				</div>
+                
+                <span purpose="zmail_modify_config" class="zmailsetup-step-desc  <?php if(!$is_mail_configured){?> zmail-dispNone <?php }?> ">
+                To modify email configuration,                 
+                <input type="button" class="zmailbtn zmailbtn--flat zmailbtn--sm" purpose="reconfigure" value="click here.">
+            </span>
+        
+            
+        </form>
+        <?php
+           }
+           ?>
+				 </div>
+		</div>
+	<div class="zmailpopover" style="display:none" id="zmailalert">
+        <header class="zmailpopover__header">
+            <h3 purpose="alertheader"></h3>
+            <div class="zmailpopover__header__actions">
+                <button class="zmailbtn zmailbtn--default zmailbtn--sm" purpose="clsbtn">
+                    <i class="zmaili-close"></i>
+                </button>
+            </div>
+        </header>
+        <div class="zmailpopover__content" purpose="alertcontent">
+            
+        </div>
+    </div>
+    </div>
