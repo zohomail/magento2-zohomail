@@ -120,7 +120,7 @@ class Transport extends MagentoTransport implements TransportInterface
 			$mail_data['ccAddress'] = $headers['Cc'];
         }
 		if (array_key_exists('Bcc',$headers)) {
-			$mail_data['ccAddress'] = $headers['Bcc'];
+			$mail_data['bccAddress'] = $headers['Bcc'];
 			
         }
 		
